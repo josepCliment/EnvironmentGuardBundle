@@ -1,0 +1,32 @@
+networks:
+    fitness-network:
+        driver: bridge
+
+services:
+
+  nginx:
+    container_name: benchmarks-nginx
+    image: nginx:1.15-alpine
+    restart: "no"
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/app:delegated
+      - ./etc/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+    networks:
+      - fitness-network
+
+  php:
+    container_name: benchmarks-php
+    build:
+      dockerfile: Dockerfile.local
+    restart: "no"
+    ports:
+      - "9091:9000"
+    volumes:
+      - .:/app:delegated
+    networks:
+      - fitness-network
+

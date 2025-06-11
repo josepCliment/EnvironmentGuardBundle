@@ -1,0 +1,34 @@
+FROM php:8.2.11-fpm-alpine
+WORKDIR /app
+
+# Instalar dependencias necesarias para PHP y PostgreSQL
+RUN apk --update upgrade \
+    && apk add --no-cache \
+        autoconf automake make gcc g++ icu-dev jpeg-dev libpng-dev zlib-dev libxslt-dev libzip-dev linux-headers \
+        postgresql-dev \
+    && pecl install xdebug apcu \
+    && docker-php-ext-enable xdebug apcu
+
+# Instalar extensiones de PHP
+RUN docker-php-ext-install -j$(nproc) \
+        bcmath \
+        opcache \
+        intl \
+        pdo_mysql \
+        gd \
+        xsl \
+        zip \
+        pgsql \
+    && docker-php-ext-enable opcache
+    # Instalar las extensiones específicas para PostgreSQL sin --with-pgsql
+RUN docker-php-ext-install pdo pdo_pgsql
+RUN docker-php-ext-install sysvmsg sysvsem sysvshm
+
+# Copiar Composer desde la imagen oficial de Composer
+COPY --from=composer:2.6.2 /usr/bin/composer /usr/bin/composer
+
+# Copiar la configuración de PHP
+COPY /etc/php /usr/local/etc/php/
+
+RUN mkdir -p var/cache var/log && chmod -R 777 var
+RUN mkdir -p /app/public && chmod -R 755 /app/public
